@@ -3,13 +3,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeMap;
 
 /**
  * Created by Kin To Pang on 15/06/14.
@@ -41,12 +40,12 @@ public class scapetest {
                     downloadSeries();
                     break;
                 case 2:
-                    BufferedReader br = new BufferedReader(new FileReader("trialdecks.txt"));
+                    /*BufferedReader br = new BufferedReader(new FileReader("trialdecks.txt"));
                     String line;
                     while ((line = br.readLine()) != null) {
                         System.out.println(line);
-                    }
-                    //downloadSingleCardList("");
+                    }*/
+                    downloadSingleCardList("/code/cardlist.html?pagetype=ws&cardset=wsrabbitbp");
                     break;
                 case 3:
                     downloadAllCardLists();
@@ -152,33 +151,40 @@ public class scapetest {
     //List format map<Card ID,  Array[carddata string,link]>
     //card data string format: english card name/japanese card name/card type/card color in hex
     private static void downloadSingleCardList(String link) throws IOException {
-        Map<String, String[]> cardList = new HashMap<>();
+        Map<String, String> cardList = new TreeMap<>();
 
         Elements cardListRaw;
 
         doc = Jsoup.connect(host + link).get();
 
-        cardListRaw = doc.select(".cardlist>tbody>tr>td:first-of-type:not([bgcolor])" +
-                ", .cardlist>tbody>tr>td>a" +
-                ", .cardlist>tbody>tr>td:nth-of-type(3):not([bgcolor])" +
-                ", .cardlist>tbody>tr>td[style]:last-of-type");
-
-        //Since the data is in the selected elements repeats every 5th element the loop increments by 5
-        for (int i = 0; i < cardListRaw.size(); i += 5) {
-            //check if the current card is a repeat
-            String spCheckerString = cardListRaw.get(i).text().substring(cardListRaw.get(i).text().length() - 3);
-            if (!spCheckerString.contains("SP") && !spCheckerString.contains("R") && !spCheckerString.contains("S")) {
-                String str = (cardListRaw.get(i + 3).text() + "/") +//Type
-                        cardListRaw.get(i + 4).attr("bgcolor");
-//                str.append(StringEscapeUtils.unescapeXml(cardListRaw.get(i + 1).text() + "/"));//ID
-//                str.append(StringEscapeUtils.unescapeXml(cardListRaw.get(i + 2).childNode(0).toString() + "/"));//Eng Name
-//                str.append(StringEscapeUtils.unescapeXml(cardListRaw.get(i + 2).childNode(2).toString() + "/"));//Jp Name
-                String[] cardDetails = {str//Color
-                        , cardListRaw.get(i + 1).attr("href")};
-                cardList.put(cardListRaw.get(i).text(), cardDetails);
-            }
-            //Skip
+        cardListRaw = doc.select(".cardlist > tbody > tr");
+        String spCheckerString = "";
+        for (int i = 1; i < cardListRaw.size(); i++) {
+            System.out.println(cardListRaw.get(i).child(0).text());
+            //Since the data is in the selected elements repeats every 5th element the loop increments by 5
+            /*for (int j = 0; j < (cardListRaw.get(i).childNodeSize()-1); j++) {
+                //check if the current card is a repeat
+                if(j==0){
+                    spCheckerString = cardListRaw.get(i).child(j).text().split("-")[1].substring(3);
+                }
+                if (!spCheckerString.contains("SP") && !spCheckerString.contains("R") && !spCheckerString.contains("S")) {
+                    StringBuilder str = new StringBuilder(cardListRaw.get(i + 3).text() + "/" + cardListRaw.get(i + 4).attr("bgcolor"));
+                    str.append(cardListRaw.get(i + 1).text() + "/");//ID
+                    str.append(cardListRaw.get(i + 2).childNode(0).toString() + "/");//Eng Name
+                    str.append(cardListRaw.get(i + 2).childNode(2).toString() + "/");//Jp Name
+                    str.append(cardListRaw.get(i + 1).attr("href"));
+                    String finalString = str.toString();
+                    cardList.put(cardListRaw.get(i).text(), finalString);
+                }
+            }*/
         }
+
+        /*PrintWriter writer = new PrintWriter("testCardList.txt", "UTF-8");
+        for (Map.Entry<String, String> entry : cardList.entrySet()) {
+            writer.println(entry.getKey() + "|" + entry.getValue());
+        }
+        System.out.println(cardList.size() + " Trial Decks Downloaded");
+        writer.close();*/
     }
 
     private static void downloadAllCardLists() {
