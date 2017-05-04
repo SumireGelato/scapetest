@@ -45,7 +45,7 @@ public class scapetest {
                     while ((line = br.readLine()) != null) {
                         System.out.println(line);
                     }*/
-                    downloadSingleCardList("/code/cardlist.html?pagetype=ws&cardset=wsrabbitbp");
+                    downloadSingleCardList();
                     break;
                 case 3:
                     downloadAllCardLists();
@@ -150,51 +150,50 @@ public class scapetest {
 
     //List format map<Card ID,  Array[carddata string,link]>
     //card data string format: english card name/japanese card name/card type/card color in hex
-    private static void downloadSingleCardList(String link) throws IOException {
+    private static void downloadSingleCardList() throws IOException {
         Map<String, String> cardList = new TreeMap<>();
 
         Elements cardListRaw;
+
+        String link = "/code/cardlist.html?pagetype=ws&cardset=wsrabbitbp";
 
         doc = Jsoup.connect(host + link).get();
 
         cardListRaw = doc.select(".cardlist > tbody > tr");
         String spCheckerString = "";
         for (int i = 1; i < cardListRaw.size(); i++) {
-            System.out.println(cardListRaw.get(i).child(0).text());
-            //Since the data is in the selected elements repeats every 5th element the loop increments by 5
-            /*for (int j = 0; j < (cardListRaw.get(i).childNodeSize()-1); j++) {
-                //check if the current card is a repeat
-                if(j==0){
-                    spCheckerString = cardListRaw.get(i).child(j).text().split("-")[1].substring(3);
-                }
-                if (!spCheckerString.contains("SP") && !spCheckerString.contains("R") && !spCheckerString.contains("S")) {
-                    StringBuilder str = new StringBuilder(cardListRaw.get(i + 3).text() + "/" + cardListRaw.get(i + 4).attr("bgcolor"));
-                    str.append(cardListRaw.get(i + 1).text() + "/");//ID
-                    str.append(cardListRaw.get(i + 2).childNode(0).toString() + "/");//Eng Name
-                    str.append(cardListRaw.get(i + 2).childNode(2).toString() + "/");//Jp Name
-                    str.append(cardListRaw.get(i + 1).attr("href"));
-                    String finalString = str.toString();
-                    cardList.put(cardListRaw.get(i).text(), finalString);
-                }
-            }*/
+            spCheckerString = cardListRaw.get(i).child(0).text().split("-")[1].substring(3);
+            //index:0 = id+url, 1 = name+url, 2 = card type, 3 = color
+            if (!spCheckerString.contains("SP") && !spCheckerString.contains("R") && !spCheckerString.contains("S")) {
+                StringBuilder str = new StringBuilder(cardListRaw.get(i).child(0).text() + "|");
+                str.append(cardListRaw.get(i).child(1).child(0).childNode(0).toString() + "|" + cardListRaw.get(i).child(1).child(0).childNode(2).toString() + "|");//Name
+                str.append(cardListRaw.get(i).child(2).text() + "|");
+                str.append(cardListRaw.get(i).child(3).text() + "|");
+                str.append(cardListRaw.get(i).child(0).child(0).attr("href"));
+                String finalString = str.toString();
+                cardList.put(cardListRaw.get(i).child(0).text(), finalString);
+            }
         }
 
-        /*PrintWriter writer = new PrintWriter("testCardList.txt", "UTF-8");
+        PrintWriter writer = new PrintWriter("testCardList.txt", "UTF-8");
         for (Map.Entry<String, String> entry : cardList.entrySet()) {
             writer.println(entry.getKey() + "|" + entry.getValue());
         }
         System.out.println(cardList.size() + " Trial Decks Downloaded");
-        writer.close();*/
+        writer.close();
+        System.out.println("Download Complete");
     }
 
     private static void downloadAllCardLists() {
 
     }
 
-    private static void downloadSingleCard(String link) throws IOException {
+    private static void downloadSingleCard() throws IOException {
         HashMap<String, String> cardData = new HashMap<>();
         Elements singleCardHeadings;
         Elements singleCardData;
+
+        String link = "";
 
         doc = Jsoup.connect(host + link).get();
 
