@@ -3,8 +3,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -45,7 +44,7 @@ public class scapetest {
                     while ((line = br.readLine()) != null) {
                         System.out.println(line);
                     }*/
-                    downloadSingleCardList();
+                    downloadSingleCardList("Gotchuumon", "/code/cardlist.html?pagetype=ws&cardset=wsrabbitbp");
                     break;
                 case 3:
                     downloadAllCardLists();
@@ -150,20 +149,21 @@ public class scapetest {
 
     //List format map<Card ID,  Array[carddata string,link]>
     //card data string format: english card name/japanese card name/card type/card color in hex
-    private static void downloadSingleCardList() throws IOException {
+    private static void downloadSingleCardList(String name, String link) {
         Map<String, String> cardList = new TreeMap<>();
 
         Elements cardListRaw;
-
-        String link = "/code/cardlist.html?pagetype=ws&cardset=wsrabbitbp";
-
-        doc = Jsoup.connect(host + link).get();
-
+        try {
+            doc = Jsoup.connect(host + link).get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         cardListRaw = doc.select(".cardlist > tbody > tr");
         String spCheckerString = "";
         for (int i = 1; i < cardListRaw.size(); i++) {
             spCheckerString = cardListRaw.get(i).child(0).text().split("-")[1].substring(3);
             //index:0 = id+url, 1 = name+url, 2 = card type, 3 = color
+            //note: scraping fails atm because disgea has 2 cardlists on one page
             if (!spCheckerString.contains("SP") && !spCheckerString.contains("R") && !spCheckerString.contains("S")) {
                 StringBuilder str = new StringBuilder(cardListRaw.get(i).child(0).text() + "|");
                 str.append(cardListRaw.get(i).child(1).child(0).childNode(0).toString() + "|" + cardListRaw.get(i).child(1).child(0).childNode(2).toString() + "|");//Name
@@ -174,18 +174,38 @@ public class scapetest {
                 cardList.put(cardListRaw.get(i).child(0).text(), finalString);
             }
         }
-
-        PrintWriter writer = new PrintWriter("testCardList.txt", "UTF-8");
-        for (Map.Entry<String, String> entry : cardList.entrySet()) {
-            writer.println(entry.getKey() + "|" + entry.getValue());
+        File parentDir = new File("cardlists");
+        if (!parentDir.exists() || !parentDir.isDirectory()) {
+            parentDir.mkdir();
         }
-        System.out.println(cardList.size() + " Trial Decks Downloaded");
-        writer.close();
+        name = name.replace('/', ' ');
+        String fileName = name + ".txt";
+        File file = new File(parentDir, fileName);
+        try {
+            file.createNewFile();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+            for (Map.Entry<String, String> entry : cardList.entrySet()) {
+                writer.write(entry.getKey() + "|" + entry.getValue());
+                writer.newLine();
+            }
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         System.out.println("Download Complete");
     }
 
     private static void downloadAllCardLists() {
-
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("trialdecks.txt"));
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split("\\|");
+                downloadSingleCardList(parts[0], parts[1]);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static void downloadSingleCard() throws IOException {
