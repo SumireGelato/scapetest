@@ -44,7 +44,7 @@ public class scapetest {
                     while ((line = br.readLine()) != null) {
                         System.out.println(line);
                     }*/
-                    downloadSingleCardList("Gotchuumon", "/code/cardlist.html?pagetype=ws&cardset=wsrabbitbp");
+                    downloadSingleCardList("trialdecks", "Disgaea", "/code/cardlist.html?pagetype=ws&cardset=S02-ws2008std");
                     break;
                 case 3:
                     downloadAllCardLists();
@@ -149,7 +149,7 @@ public class scapetest {
 
     //List format map<Card ID,  Array[carddata string,link]>
     //card data string format: english card name/japanese card name/card type/card color in hex
-    private static void downloadSingleCardList(String name, String link) {
+    private static void downloadSingleCardList(String type, String name, String link) {
         Map<String, String> cardList = new TreeMap<>();
 
         Elements cardListRaw;
@@ -160,10 +160,13 @@ public class scapetest {
         }
         cardListRaw = doc.select(".cardlist > tbody > tr");
         String spCheckerString = "";
-        for (int i = 1; i < cardListRaw.size(); i++) {
+        int i = 1;
+        if (type.equals("trialdecks") && name.equals("Disgaea")) {
+            i = 21;
+        }
+        while (i < cardListRaw.size()) {
             spCheckerString = cardListRaw.get(i).child(0).text().split("-")[1].substring(3);
             //index:0 = id+url, 1 = name+url, 2 = card type, 3 = color
-            //note: scraping fails atm because disgea has 2 cardlists on one page
             if (!spCheckerString.contains("SP") && !spCheckerString.contains("R") && !spCheckerString.contains("S")) {
                 StringBuilder str = new StringBuilder(cardListRaw.get(i).child(0).text() + "|");
                 str.append(cardListRaw.get(i).child(1).child(0).childNode(0).toString() + "|" + cardListRaw.get(i).child(1).child(0).childNode(2).toString() + "|");//Name
@@ -173,12 +176,15 @@ public class scapetest {
                 String finalString = str.toString();
                 cardList.put(cardListRaw.get(i).child(0).text(), finalString);
             }
+            i++;
         }
         File parentDir = new File("cardlists");
         if (!parentDir.exists() || !parentDir.isDirectory()) {
             parentDir.mkdir();
         }
         name = name.replace('/', ' ');
+        name = name.replace('?', ' ');
+        name = name.replace(':', ' ');
         String fileName = name + ".txt";
         File file = new File(parentDir, fileName);
         try {
@@ -201,7 +207,7 @@ public class scapetest {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split("\\|");
-                downloadSingleCardList(parts[0], parts[1]);
+                downloadSingleCardList("trialdecks", parts[0], parts[1]);
             }
         } catch (Exception e) {
             e.printStackTrace();
